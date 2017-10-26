@@ -65,7 +65,16 @@ class PersonLoB:
         fov = ins["CameraFoV"]
         ch = ins["CompassHdg"]
 
-        image = base64.decodestring(bytes(ins["ImageEncoded"], 'utf-8'))
+        image = base64.urlsafe_b64decode(ins["ImageEncoded"]) # TypeError: Incorrect padding
+
+        #image = base64.b64decode(ins["ImageEncoded"], '-_') # TypeError: character mapping must return integer, None or unicode
+
+        #strg = bytes(ins["ImageEncoded"])
+        #lens = len(strg)
+        #lenx = lens - (lens % 4 if lens % 4 else 4)
+        #image = base64.urlsafe_b64decode(strg[:lenx])  # TypeError: Incorrect padding
+
+        #image = base64.decodestring(bytes(ins["ImageEncoded"]), "utf8") # TypeError: str() takes at most 1 argument (2 given)
         
         # Allocate GPU memory
         config = tf.ConfigProto()
