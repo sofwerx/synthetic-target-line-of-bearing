@@ -62,8 +62,8 @@ class PersonLoB:
     # In[ ]:
     def __init__(self, inputData): # inputData is image, fov, compass hdg
         ins = json.loads(inputData)
-        fov = ins["CameraFoV"]
-        ch = ins["CompassHdg"]
+        fov = ins["fov"]
+        ch = ins["compass"]
 
         image = base64.urlsafe_b64decode(ins["ImageEncoded"]) # TypeError: Incorrect padding
 
@@ -74,7 +74,7 @@ class PersonLoB:
         #lenx = lens - (lens % 4 if lens % 4 else 4)
         #image = base64.urlsafe_b64decode(strg[:lenx])  # TypeError: Incorrect padding
 
-        #image = base64.decodestring(bytes(ins["ImageEncoded"]), "utf8") # TypeError: str() takes at most 1 argument (2 given)
+        image = base64.decodestring(bytes(ins["ImageEncoded"], 'utf-8'))
         
         # Allocate GPU memory
         config = tf.ConfigProto()
@@ -236,13 +236,22 @@ class PersonLoB:
         df5['x_min_t'] = df5['x_min'].apply(lambda x: x * imageWidth)
         df5['y_max_t'] = df5['y_max'].apply(lambda x: x * imageHeight)
         df5['x_max_t'] = df5['x_max'].apply(lambda x: x * imageWidth)
-    
+        
         # Create objects pixel location
-        df5['x_loc'] = df5['x_max_t'] - df5["x_min_t"]
-        df5['y_loc'] = df5['y_max_t'] - df5["y_min_t"]
+        
+        # Create objects pixel location x and y
+        # X
+        df5['ob_wid_x'] = df5['x_max_t'] - df5["x_min_t"]
+        df5['ob_mid_x'] = df5['ob_wid_x'] / 2
+        df5['x_loc'] = df5["x_min_t"] + df5['ob_mid_x']
+        # Y
+        df5['ob_hgt_y'] = df5['y_max_t'] - df5["y_min_t"]
+        df5['ob_mid_y'] = df5['ob_hgt_y'] / 2
+        df5['y_loc'] = df5["y_min_t"] + df5['ob_mid_y']
+
     
         # Find object degree of angle, data is sorted by score, select person with highest score
-        df5['object_angle'] = df5['x_loc'].apply(lambda x: (imageWidthCenter - x) * pixelDegree)
+        df5['object_angle'] = df5['x_loc'].apply(lambda x: -(imageWidthCenter - x) * pixelDegree)
         df6 = df5.loc[df5['classes'] == 1]
         df7 = df6.iloc[0]['object_angle']
         AOB = df7 + ch
