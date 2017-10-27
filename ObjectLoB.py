@@ -54,6 +54,7 @@ from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
 from io import BytesIO
+import cStringIO
 
 import json
 import base64
@@ -134,7 +135,9 @@ class PersonLoB:
         fov = ins['fov']
         ch = ins['compass']
         #image = str(ins['image'].split(",")[1].decode('base64'))
-        image = Image.open(BytesIO(ins['image'].split(",")[1].decode('base64')))
+        #image = Image.open(BytesIO(ins['image'].split(",")[1].decode('base64'))) 
+        image_string = cStringIO.StringIO(ins['image'].split(",")[1].decode('base64'))
+        image = Image.open(image_string)
 
         # Allocate GPU memory
         logger.info("Initializing TensorFlow")
@@ -198,6 +201,8 @@ class PersonLoB:
                 # Open Image and get height and width for angle of object
                 #image = Image.open(image)
                 width, height = image.size
+                logger.info("Loading image of size %d by %d",width,height)
+
                 # the array based representation of the image will be used later in order to prepare the
                 # result image with boxes and labels on it.
                 image_np = load_image_into_numpy_array(image)
