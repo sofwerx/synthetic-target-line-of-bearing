@@ -206,12 +206,15 @@ class PersonLoB:
                 # the array based representation of the image will be used later in order to prepare the
                 # result image with boxes and labels on it.
                 image_np = load_image_into_numpy_array(image)
+                logger.info("Numpy array loaded")
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                 image_np_expanded = np.expand_dims(image_np, axis=0)
                 # Actual detection.
+                logger.info("Running actual detection")
                 (boxes, scores, classes, num) = sess.run(
                     [detection_boxes, detection_scores, detection_classes, num_detections],
                     feed_dict={image_tensor: image_np_expanded})
+                logger.info("Detection run complete")
                 # Visualization of the results of a detection.
                 # vis_util.visualize_boxes_and_labels_on_image_array(
                 # image_np,
@@ -224,6 +227,7 @@ class PersonLoB:
                 # plt.figure(figsize=IMAGE_SIZE)
                 # plt.imshow(image_np)
     
+        logger.info("We have a result")
         # Angle of view, image height, image width, image height center pixel, image width center pixel,
         # and pixel degree,
         fov = fov
@@ -263,6 +267,8 @@ class PersonLoB:
         df6 = df5.loc[df5['classes'] == 1]
         df7 = df6.iloc[0]['object_angle']
         AOB = df7 + ch
+
+        logger.info("Returning AOB")
     
         # Print AOB
         #print AOB
