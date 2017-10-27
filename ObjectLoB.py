@@ -53,6 +53,7 @@ from collections import defaultdict
 from io import StringIO
 from matplotlib import pyplot as plt
 from PIL import Image
+from io import BytesIO
 
 import json
 import base64
@@ -61,26 +62,88 @@ import logging
 
 logger = logging.getLogger("django")
 
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as vis_util
+from object_detection.protos import string_int_label_map_pb2
+
 class PersonLoB:
+
+    # ## Env setup
+
+    # In[ ]:
+
+    # What model to download.
+    MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
+    MODEL_FILE = MODEL_NAME + '.tar.gz'
+    DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
+
+    # Path to frozen detection graph. This is the actual model that is used for the object detection.
+    PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
+
+    # List of the strings that is used to add correct label for each box.
+    PATH_TO_LABELS = os.path.join('models','research','object_detection','data','mscoco_label_map.pbtxt')
+
+    NUM_CLASSES = 90
+
+
+    # ## Download Model
+
+    # In[ ]:
+    if not os.path.isdir(MODEL_NAME):
+      logger.info("The model directory %s does not yet exist", MODEL_NAME)
+      if not os.path.isfile(MODEL_FILE) :
+        logger.info("The model file %s does not yet exist", MODEL_FILE)
+        opener = urllib.request.URLopener()
+        opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
+      logger.info("The model file %s has been downloaded", MODEL_FILE)
+      tar_file = tarfile.open(MODEL_FILE)
+      for file in tar_file.getmembers():
+        file_name = os.path.basename(file.name)
+        if 'frozen_inference_graph.pb' in file_name:
+          tar_file.extract(file, os.getcwd())
+          logger.info("The model %s has been extracted", file)
+
+    # ## Load a (frozen) Tensorflow model into memory.
+
+    # In[ ]:
+    logger.info("tf.Graph()")
+    detection_graph = tf.Graph()
+    with detection_graph.as_default():
+        logger.info("tf.GraphDef()")
+        od_graph_def = tf.GraphDef()
+        with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+            logger.info("serialized_graph")
+            serialized_graph = fid.read()
+            od_graph_def.ParseFromString(serialized_graph)
+            tf.import_graph_def(od_graph_def, name='')
+
+    # ## Loading label map
+    # Label maps map indices to category names, so that when our convolution network predicts `5`, we know that this corresponds to `airplane`.  Here we use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine
+
+    # In[ ]:
+    logger.info("Loading label maps")
+    label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+    categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
+                                                                use_display_name=True)
+    category_index = label_map_util.create_category_index(categories)
+
+    logger.info("PersonLoB class ready")
 
     # In[ ]:
     def lob(self, ins): # inputData is image, fov, compass hdg
 
         fov = ins['fov']
-
         ch = ins['compass']
-
-        image = str(ins['image'].split(",")[1].decode('base64'))
+        #image = str(ins['image'].split(",")[1].decode('base64'))
+        image = Image.open(BytesIO(ins['image'].split(",")[1].decode('base64')))
 
         # Allocate GPU memory
+        logger.info("Initializing TensorFlow")
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
+        logger.info("Creating Tensorflow session")
         session = tf.Session(config=config)
-    
-        # ## Env setup
-    
-        # In[ ]:
-    
+        logger.info("Tensorflow session created")
     
         # This is needed to display the images.
         # get_ipython().magic(u'matplotlib inline')
@@ -93,11 +156,6 @@ class PersonLoB:
     
         # In[ ]:
     
-    
-#         from utils import label_map_util
-#     
-#         from utils import visualization_utils as vis_util
-#     
         # # Model preparation
     
         # ## Variables
@@ -106,65 +164,12 @@ class PersonLoB:
         #
         # By default we use an "SSD with Mobilenet" model here. See the [detection model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md) for a list of other models that can be run out-of-the-box with varying speeds and accuracies.
     
-        # In[ ]:
-    
-        # What model to download.
-        MODEL_NAME = 'ssd_mobilenet_v1_coco_11_06_2017'
-        MODEL_FILE = MODEL_NAME + '.tar.gz'
-        DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
-    
-        # Path to frozen detection graph. This is the actual model that is used for the object detection.
-        PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
-    
-        # List of the strings that is used to add correct label for each box.
-        PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
-    
-        NUM_CLASSES = 90
-    
-        # ## Download Model
-    
-        # In[ ]:
-    
-        if not os.path.isdir(MODEL_NAME):
-          if not os.path.isfile(MODEL_FILE) :
-            opener = urllib.request.URLopener()
-            opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-          tar_file = tarfile.open(MODEL_FILE)
-          for file in tar_file.getmembers():
-            file_name = os.path.basename(file.name)
-            if 'frozen_inference_graph.pb' in file_name:
-              tar_file.extract(file, os.getcwd())
-    
-        # ## Load a (frozen) Tensorflow model into memory.
-    
-        # In[ ]:
-    
-    
-        detection_graph = tf.Graph()
-        with detection_graph.as_default():
-            od_graph_def = tf.GraphDef()
-            with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-                serialized_graph = fid.read()
-                od_graph_def.ParseFromString(serialized_graph)
-                tf.import_graph_def(od_graph_def, name='')
-    
-        # ## Loading label map
-        # Label maps map indices to category names, so that when our convolution network predicts `5`, we know that this corresponds to `airplane`.  Here we use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine
-    
-        # In[ ]:
-    
-    
-        label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
-        categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES,
-                                                                    use_display_name=True)
-        category_index = label_map_util.create_category_index(categories)
-    
         # ## Helper code
     
         # In[ ]:
     
-    
         def load_image_into_numpy_array(image):
+            logger.info("Loading image into numpy array")
             (im_width, im_height) = image.size
             return np.array(image.getdata()).reshape(
                 (im_height, im_width, 3)).astype(np.uint8)
@@ -178,19 +183,21 @@ class PersonLoB:
     
         # Apply algorithm to images
     
-        with detection_graph.as_default():
-            with tf.Session(graph=detection_graph) as sess:
+        with self.__class__.detection_graph.as_default():
+            logger.info("Applying algorithm to images")
+            with tf.Session(graph=self.__class__.detection_graph) as sess:
+                logger.info("Opened TensorFlow detection_graph session")
                 # Definite input and output Tensors for detection_graph
-                image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+                image_tensor = self.__class__.detection_graph.get_tensor_by_name('image_tensor:0')
                 # Each box represents a part of the image where a particular object was detected.
-                detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+                detection_boxes = self.__class__.detection_graph.get_tensor_by_name('detection_boxes:0')
                 # Each score represent how level of confidence for each of the objects.
                 # Score is shown on the result image, together with the class label.
-                detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
-                detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
-                num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+                detection_scores = self.__class__.detection_graph.get_tensor_by_name('detection_scores:0')
+                detection_classes = self.__class__.detection_graph.get_tensor_by_name('detection_classes:0')
+                num_detections = self.__class__.detection_graph.get_tensor_by_name('num_detections:0')
                 # Open Image and get height and width for angle of object
-                image = Image.open(image)
+                #image = Image.open(image)
                 width, height = image.size
                 # the array based representation of the image will be used later in order to prepare the
                 # result image with boxes and labels on it.
