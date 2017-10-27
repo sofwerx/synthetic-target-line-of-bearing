@@ -57,25 +57,21 @@ from PIL import Image
 import json
 import base64
 
+import logging
+
+logger = logging.getLogger("django")
+
 class PersonLoB:
 
     # In[ ]:
-    def __init__(self, inputData): # inputData is image, fov, compass hdg
-        ins = json.loads(inputData)
-        fov = ins["fov"]
-        ch = ins["compass"]
+    def lob(self, ins): # inputData is image, fov, compass hdg
 
-        image = base64.urlsafe_b64decode(ins["ImageEncoded"]) # TypeError: Incorrect padding
+        fov = ins['fov']
 
-        #image = base64.b64decode(ins["ImageEncoded"], '-_') # TypeError: character mapping must return integer, None or unicode
+        ch = ins['compass']
 
-        #strg = bytes(ins["ImageEncoded"])
-        #lens = len(strg)
-        #lenx = lens - (lens % 4 if lens % 4 else 4)
-        #image = base64.urlsafe_b64decode(strg[:lenx])  # TypeError: Incorrect padding
+        image = str(ins['image'].split(",")[1].decode('base64'))
 
-        image = base64.decodestring(bytes(ins["ImageEncoded"], 'utf-8'))
-        
         # Allocate GPU memory
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
@@ -259,13 +255,13 @@ class PersonLoB:
         # Print AOB
         #print AOB
     
-        return AOB;
-    
+        resp = {
+          "aob": AOB
+        }
+
+        return resp
     
     #objectAOB(image, 122, 180)
-    
-    
-    
     
     # In[ ]:
 
