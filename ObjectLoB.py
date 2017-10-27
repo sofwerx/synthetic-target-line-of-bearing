@@ -81,10 +81,9 @@ class PersonLoB:
     PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 
     # List of the strings that is used to add correct label for each box.
-    PATH_TO_LABELS = os.path.join('models','research','object_detection','data','mscoco_label_map.pbtxt')
+    PATH_TO_LABELS = os.path.join( os.environ["TENSORFLOW_MODELS"],'research','object_detection','data','mscoco_label_map.pbtxt')
 
     NUM_CLASSES = 90
-
 
     # ## Download Model
 
