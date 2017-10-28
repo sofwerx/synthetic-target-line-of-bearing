@@ -134,18 +134,21 @@ class PersonLoB:
 
         fov = ins['fov']
         ch = ins['compass']
-        #image = str(ins['image'].split(",")[1].decode('base64'))
-        #image = Image.open(BytesIO(ins['image'].split(",")[1].decode('base64'))) 
+
+        # Identify the client
+        peer = ins['peer']
+        timestamp = ins['timestamp']
+
         image_string = cStringIO.StringIO(ins['image'].split(",")[1].decode('base64'))
         image = Image.open(image_string)
 
         # Allocate GPU memory
-        logger.info("Initializing TensorFlow")
+        logger.info("[%s/%ld] Initializing TensorFlow",peer,timestamp)
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        logger.info("Creating Tensorflow session")
+        logger.info("[%s/%ld] Creating Tensorflow session",peer,timestamp)
         session = tf.Session(config=config)
-        logger.info("Tensorflow session created")
+        logger.info("[%s/%ld] Tensorflow session created",peer,timestamp)
     
         # This is needed to display the images.
         # get_ipython().magic(u'matplotlib inline')
@@ -171,7 +174,7 @@ class PersonLoB:
         # In[ ]:
     
         def load_image_into_numpy_array(image):
-            logger.info("Loading image into numpy array")
+            logger.info("[%s/%ld] Loading image into numpy array",peer,timestamp)
             (im_width, im_height) = image.size
             return np.array(image.getdata()).reshape(
                 (im_height, im_width, 3)).astype(np.uint8)
@@ -186,9 +189,9 @@ class PersonLoB:
         # Apply algorithm to images
     
         with self.__class__.detection_graph.as_default():
-            logger.info("Applying algorithm to images")
+            logger.info("[%s/%ld] Applying algorithm to images",peer,timestamp)
             with tf.Session(graph=self.__class__.detection_graph) as sess:
-                logger.info("Opened TensorFlow detection_graph session")
+                logger.info("[%s/%ld] Opened TensorFlow detection_graph session",peer,timestamp)
                 # Definite input and output Tensors for detection_graph
                 image_tensor = self.__class__.detection_graph.get_tensor_by_name('image_tensor:0')
                 # Each box represents a part of the image where a particular object was detected.
@@ -201,20 +204,20 @@ class PersonLoB:
                 # Open Image and get height and width for angle of object
                 #image = Image.open(image)
                 width, height = image.size
-                logger.info("Loading image of size %d by %d",width,height)
+                logger.info("[%s/%ld] Loading image of size %d by %d",peer,timestamp,width,height)
 
                 # the array based representation of the image will be used later in order to prepare the
                 # result image with boxes and labels on it.
                 image_np = load_image_into_numpy_array(image)
-                logger.info("Numpy array loaded")
+                logger.info("[%s/%ld] Numpy array loaded",peer,timestamp)
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                 image_np_expanded = np.expand_dims(image_np, axis=0)
                 # Actual detection.
-                logger.info("Running actual detection")
+                logger.info("[%s/%ld] Running actual detection",peer,timestamp)
                 (boxes, scores, classes, num) = sess.run(
                     [detection_boxes, detection_scores, detection_classes, num_detections],
                     feed_dict={image_tensor: image_np_expanded})
-                logger.info("Detection run complete")
+                logger.info("[%s/%ld] Detection run complete",peer,timestamp)
                 # Visualization of the results of a detection.
                 # vis_util.visualize_boxes_and_labels_on_image_array(
                 # image_np,
@@ -227,7 +230,7 @@ class PersonLoB:
                 # plt.figure(figsize=IMAGE_SIZE)
                 # plt.imshow(image_np)
     
-        logger.info("We have a result")
+        logger.info("[%s/%ld] We have a result",peer,timestamp)
         # Angle of view, image height, image width, image height center pixel, image width center pixel,
         # and pixel degree,
         fov = fov
@@ -268,7 +271,9 @@ class PersonLoB:
         df7 = df6.iloc[0]['object_angle']
         AOB = df7 + ch
 
-        logger.info("Returning AOB")
+        session.close()
+
+        logger.info("[%s/%ld] Returning AOB",peer,timestamp)
     
         # Print AOB
         #print AOB
