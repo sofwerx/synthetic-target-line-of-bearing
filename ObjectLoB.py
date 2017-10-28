@@ -127,6 +127,12 @@ class PersonLoB:
                                                                 use_display_name=True)
     category_index = label_map_util.create_category_index(categories)
 
+    # Allocate GPU memory
+    logger.info("Initializing TensorFlow session")
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session =  tf.Session(graph=detection_graph, config=config)
+
     logger.info("PersonLoB class ready")
 
     # In[ ]:
@@ -142,14 +148,6 @@ class PersonLoB:
         image_string = cStringIO.StringIO(ins['image'].split(",")[1].decode('base64'))
         image = Image.open(image_string)
 
-        # Allocate GPU memory
-        logger.info("[%s/%ld] Initializing TensorFlow",peer,timestamp)
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        logger.info("[%s/%ld] Creating Tensorflow session",peer,timestamp)
-        session = tf.Session(config=config)
-        logger.info("[%s/%ld] Tensorflow session created",peer,timestamp)
-    
         # This is needed to display the images.
         # get_ipython().magic(u'matplotlib inline')
     
@@ -190,7 +188,7 @@ class PersonLoB:
     
         with self.__class__.detection_graph.as_default():
             logger.info("[%s/%ld] Applying algorithm to images",peer,timestamp)
-            with tf.Session(graph=self.__class__.detection_graph) as sess:
+            with self.__class__.session.as_default():
                 logger.info("[%s/%ld] Opened TensorFlow detection_graph session",peer,timestamp)
                 # Definite input and output Tensors for detection_graph
                 image_tensor = self.__class__.detection_graph.get_tensor_by_name('image_tensor:0')
@@ -214,7 +212,7 @@ class PersonLoB:
                 image_np_expanded = np.expand_dims(image_np, axis=0)
                 # Actual detection.
                 logger.info("[%s/%ld] Running actual detection",peer,timestamp)
-                (boxes, scores, classes, num) = sess.run(
+                (boxes, scores, classes, num) = self.__class__.session.run(
                     [detection_boxes, detection_scores, detection_classes, num_detections],
                     feed_dict={image_tensor: image_np_expanded})
                 logger.info("[%s/%ld] Detection run complete",peer,timestamp)
@@ -271,7 +269,7 @@ class PersonLoB:
         df7 = df6.iloc[0]['object_angle']
         AOB = df7 + ch
 
-        session.close()
+        # session.close()
 
         logger.info("[%s/%ld] Returning AOB",peer,timestamp)
     
