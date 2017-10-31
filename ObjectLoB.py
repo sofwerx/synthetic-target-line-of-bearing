@@ -282,7 +282,7 @@ class PersonLoB:
 
         if df6.empty:
 
-            AOB = null
+            AOB = None
 
         else:
 
