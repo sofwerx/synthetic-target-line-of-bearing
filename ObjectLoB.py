@@ -138,12 +138,21 @@ class PersonLoB:
     # In[ ]:
     def lob(self, ins): # inputData is image, fov, compass hdg
 
-        fov = ins['fov']
-        ch = ins['compass']
-
         # Identify the client
         peer = ins['peer']
         timestamp = ins['timestamp']
+
+        fov = 120.0
+        if 'fov' in ins:
+          if ins['fov']:
+            fov = float(ins['fov'])
+
+        logger.info("[%s/%ld] fov = %f",peer,timestamp,fov)
+
+        ch = 0.0
+        if 'compass' in ins:
+          if ins['compass']:
+            ch = float(ins['compass'])
 
         image_string = cStringIO.StringIO(ins['image'].split(",")[1].decode('base64'))
         image = Image.open(image_string)
