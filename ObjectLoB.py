@@ -39,6 +39,7 @@
 # for image_path in TEST_IMAGE_PATHS:
 
 # # Imports
+from datetime import datetime
 import numpy as np
 import os
 import six.moves.urllib as urllib
@@ -138,6 +139,8 @@ class PersonLoB:
 
     # In[ ]:
     def lob(self, ins):  # inputData is image, fov, compass hdg
+
+        start = datetime.now()
 
         # Identify the client
         peer = ins['peer']
@@ -294,10 +297,16 @@ class PersonLoB:
            # print AOB
         # print AOB
 
+        end = datetime.now()
+
+        delta = end - start
+
         resp = {
-            "aob": AOB
+            "aob": AOB,
+            "time": delta.total_seconds()
         }
 
+        logger.info("[%s/%ld] AOB response: %s", peer, timestamp, json.dumps(resp))
         return resp
 
         # objectAOB(image, 122, 180)
