@@ -139,7 +139,13 @@ class PersonLoB:
 
     # In[ ]:
     def lob(self, ins):  # inputData is image, fov, compass hdg
-
+        resp = {
+            "aob": None,
+            "time": None,
+            "object_found": None,
+            "object_score": 0,
+            "compass": None
+        }
         start = datetime.now()
 
         # Identify the client
@@ -157,6 +163,7 @@ class PersonLoB:
         if 'compass' in ins:
             if ins['compass']:
                 ch = float(ins['compass'])
+        resp["compass"] = ch
 
         image_string = cStringIO.StringIO(ins['image'].split(",")[1].decode('base64'))
         image = Image.open(image_string)
@@ -291,6 +298,9 @@ class PersonLoB:
 
             df7 = df6.iloc[0]['object_angle']
             AOB = df7 + ch
+                    
+            resp["object_score"] = df6.iloc[0]['scores']
+            resp["object_identified"] = "person"
 
 
        # Print AOB
@@ -300,11 +310,9 @@ class PersonLoB:
         end = datetime.now()
 
         delta = end - start
-
-        resp = {
-            "aob": AOB,
-            "time": delta.total_seconds()
-        }
+        
+        resp["aob"] = AOB
+        resp["time"] = delta.total_seconds()
 
         logger.info("[%s/%ld] AOB response: %s", peer, timestamp, json.dumps(resp))
         return resp
