@@ -286,6 +286,9 @@ class PersonLoB:
         df5['object_angle'] = df5['x_loc'].apply(lambda x: -(imageWidthCenter - x) * pixelDegree)
         df6 = df5.loc[(df5['classes'] == 1) & (df5['scores'] > 0.30)]
 
+        resp["object_scores"] = ' '.join(str(e) for e in df6['scores'])
+        #resp["object_classes"] = df6['classes']
+
         # session.close()
 
         #logger.info("[%s/%ld] Returning AOB", peer, timestamp)
@@ -299,7 +302,6 @@ class PersonLoB:
             df7 = df6.iloc[0]['object_angle']
             AOB = df7 + ch
                     
-            resp["object_score"] = df6.iloc[0]['scores']
             resp["object_identified"] = "person"
 
 
