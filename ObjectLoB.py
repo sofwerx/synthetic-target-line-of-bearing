@@ -138,7 +138,7 @@ class PersonLoB:
     logger.info("PersonLoB class ready")
 
     # In[ ]:
-    def lob(self, ins):  # inputData is image, fov, compass hdg
+    def lob(self, ins):  # inputData is image, fov, compass hdg, id class, threshhold
         resp = {
             "aob": None,
             "time": None,
@@ -151,6 +151,8 @@ class PersonLoB:
         # Identify the client
         peer = ins['peer']
         timestamp = ins['timestamp']
+        idclass = ins['idclass'] or 1
+        threshhold = ins['threshhold'] or 0.20
 
         fov = 120.0
         if 'fov' in ins:
@@ -285,7 +287,7 @@ class PersonLoB:
 
         # Find object degree of angle, data is sorted by score, select person with highest score
         df5['object_angle'] = df5['x_loc'].apply(lambda x: -(imageWidthCenter - x) * pixelDegree)
-        df6 = df5.loc[(df5['classes'] == 1) & (df5['scores'] > 0.30)]
+        df6 = df5.loc[(df5['classes'] == idclass) & (df5['scores'] > threshhold)]
 
         resp['object_scores'] = df5.to_string(columns=['classes','scores'])
         #resp["object_scores"] = ' '.join(str(e) for e in df5['classes']) + ' : ' + ' '.join(str(e) for e in df5['scores'])
