@@ -151,8 +151,8 @@ class PersonLoB:
         # Identify the client
         peer = ins['peer']
         timestamp = ins['timestamp']
-        idclass = ins['idclass'] or 1
-        threshhold = ins['threshhold'] or 0.20
+        idclass = float(ins['idclass'] or 1)
+        threshhold = float(ins['threshhold'] or 0.20)
 
         fov = 120.0
         if 'fov' in ins:
