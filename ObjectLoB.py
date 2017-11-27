@@ -303,9 +303,11 @@ class PersonLoB:
             AOB = df7 + ch
 
             resp["object_found"] = True
-            resp["object_score"] = df6['scores'][0]
+            try:
+              resp["object_score"] = str(df6['scores'][0])
+            except:
+              resp["object_score"] = str(-1)
             resp["object_identified"] = "person"
-
 
        # Print AOB
            # print AOB
