@@ -301,7 +301,9 @@ class PersonLoB:
 
             df7 = df6.iloc[0]['object_angle']
             AOB = df7 + ch
-                    
+
+            resp["object_found"] = true
+            resp["object_score"] = df6['scores'][0]
             resp["object_identified"] = "person"
 
 
