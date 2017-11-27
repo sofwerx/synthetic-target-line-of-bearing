@@ -286,7 +286,7 @@ class PersonLoB:
         df5['object_angle'] = df5['x_loc'].apply(lambda x: -(imageWidthCenter - x) * pixelDegree)
         df6 = df5.loc[(df5['classes'] == 1) & (df5['scores'] > 0.30)]
 
-        resp["object_scores"] = ' '.join(str(e) for e in df6['scores'])
+        resp["object_scores"] = ' '.join(str(e) for e in df5['classes']) + ' : ' + ' '.join(str(e) for e in df5['scores'])
         #resp["object_classes"] = df6['classes']
 
         # session.close()
