@@ -262,8 +262,7 @@ class PersonLoB:
 
         # Convert tensorflow data to pandas data frams
         df = pd.DataFrame(boxes.reshape(100, 4), columns=['y_min', 'x_min', 'y_max', 'x_max'])
-        df1 = pd.DataFrame(classes.reshape(100, 1), columns=['classes'])
-        df1.round(0)
+        df1 = pd.DataFrame(classes.reshape(100, 1), columns=['classes'], dtype=int)
         df2 = pd.DataFrame(scores.reshape(100, 1), columns=['scores'])
         df5 = pd.concat([df, df1, df2], axis=1)
 
@@ -289,6 +288,8 @@ class PersonLoB:
         df5['object_angle'] = df5['x_loc'].apply(lambda x: -(imageWidthCenter - x) * pixelDegree)
         df6 = df5.loc[(df5['classes'] == idclass) & (df5['scores'] > threshhold)]
 
+#         dfLabeled = pd.concat(category_index[df5['classes']], df5['scores'])
+#         resp['object_scores'] = dfLabeled
         resp['object_scores'] = df5.to_string(columns=['classes','scores'])
         #resp["object_scores"] = ' '.join(str(e) for e in df5['classes']) + ' : ' + ' '.join(str(e) for e in df5['scores'])
         #resp["object_classes"] = df6['classes']
