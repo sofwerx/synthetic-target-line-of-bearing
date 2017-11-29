@@ -290,7 +290,7 @@ class PersonLoB:
 
 #         dfLabeled = pd.concat(category_index[df5['classes']], df5['scores'])
 #         resp['object_scores'] = dfLabeled
-        resp['object_scores'] = df5.to_string(columns=['classes','scores'])
+        resp['object_scores'] = df5[1:10].to_string(columns=['classes','scores'])
         #resp["object_scores"] = ' '.join(str(e) for e in df5['classes']) + ' : ' + ' '.join(str(e) for e in df5['scores'])
         #resp["object_classes"] = df6['classes']
 
